@@ -14,7 +14,9 @@
 	<body>
 
 		<video id="localVideo" autoplay playsinline muted></video>
+		<video id="localDisplay" autoplay playsinline muted></video>
 		<video id="remoteVideo" autoplay playsinline></video>
+		<video id="remoteDisplay" autoplay playsinline></video>
 
 		<div>
 			<p>
@@ -39,7 +41,9 @@
 			const servers = {'iceServers': [{'url': 'stun:stun.l.google.com:19302'}]};
 
 			const localVideo = document.getElementById('localVideo');
+			const localDisplay = document.getElementById('localDisplay');
 			const remoteVideo = document.getElementById('remoteVideo');
+			const remoteDisplay = document.getElementById('remoteDisplay');
 
 			const localOffer = document.getElementById('localOffer');
 			const remoteOffer = document.getElementById('remoteOffer');
@@ -65,6 +69,8 @@
 			
 			const peerMediaStream = new MediaStream();
 			peerConnection.addStream(peerMediaStream);
+			const peerDisplayStream = new MediaStream();
+			peerConnection.addStream(peerDisplayStream);
 
 			// get the video media stream
 			navigator.mediaDevices.getUserMedia(mediaStreamConstraints)
@@ -77,7 +83,19 @@
 					}
 				)
 				.catch(logError);
-	
+
+				// get display media stream
+			navigator.mediaDevices.getDisplayMedia(mediaStreamConstraints)
+				.then((mediaStream) => {
+
+					localDisplay.srcObject = mediaStream;
+
+					for (const track of mediaStream.getTracks())
+						peerDisplayStream.addTrack(track);
+					}
+				)
+				.catch(logError);
+
 			function handleConnection(event) {
 
 				const connection = event.target;
@@ -103,7 +121,14 @@
 			function gotRemoteMediaStream(event) {
 
 				const mediaStream = event.stream;
-				remoteVideo.srcObject = mediaStream;
+				if (mediaStream.getTracks().length > 1) {
+					//camera
+					remoteVideo.srcObject = mediaStream;
+				}
+				else {
+					//screen
+					remoteDisplay.srcObject = mediaStream;
+				}
 				console.log('remote peer connection received remote stream')
 			}
 
